@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Parameters:    
+  KeyName:
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+Resources:
+  MyEC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties: 
+      ImageId: "ami-0e8c04af2729ff1bb"
+      InstanceType: t2.micro
+      SecurityGroups:
+        - Ref: WebServerSecurityGroup
+      IamInstanceProfile: !Ref CodeDeployInstanceProfile
+      KeyName:
+          Ref: KeyName
+      UserData:
+        Fn::Base64:                                # YAML makes userdata much cleaner
+          !Sub |
+              #!/bin/bash -ex
+              sudo yum update -y
+              sudo yum install maven -y
+              sudo yum install ruby -y
+              sudo yum install wget -y
+              cd /home/ec2-user
+              wget https://aws-codedeploy-eu-west-1.s3.eu-west-1.amazonaws.com/latest/install
+              chmod +x ./install
+              sudo ./install auto
+      Tags:                                      # Tags are an example of a sequence of mappings in YAML,
+        -                                        # each key/value pair is separated by a hyphen
+          Key: Name
+          Value: CloudFormation Test - YAML      
+        -
+          Key: Environment
+          Value: Development
+
+  CodeDeployInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref S3WritableRole
+        
+  S3WritableRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+  
+  RolePolicies:
+    Type: AWS::IAM::Policy
+    DependsOn:
+      - MyEC2Instance
+    Properties:
+      PolicyName: S3AccessForCodeDeploy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 's3:*'
+            Resource: '*'
+      Roles:
+        - !Ref S3WritableRole
+        
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Enable HTTP access via port 80 locked down to the load balancer + SSH access"
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: '8080'
+        IpProtocol: tcp
+        ToPort: '8080'
+      - CidrIp: 0.0.0.0/0
+        FromPort: '22'
+        IpProtocol: tcp
+        ToPort: '22'

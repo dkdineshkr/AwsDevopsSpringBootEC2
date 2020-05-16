@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - cp ./settings.xml /root/.m2/settings.xml 
+      - printenv
+  build:
+    commands:
+      - mvn package
+      - mvn clean 
+      - mvn install
+artifacts:
+  files:
+    - 'target/MySpringBoot.jar'

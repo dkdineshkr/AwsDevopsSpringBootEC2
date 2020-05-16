@@ -1,0 +1,1 @@
+echo 'curl test to ping application'
