@@ -28,10 +28,11 @@ Resources:
               wget https://aws-codedeploy-eu-west-1.s3.eu-west-1.amazonaws.com/latest/install
               chmod +x ./install
               sudo ./install auto
+              
       Tags:                                      # Tags are an example of a sequence of mappings in YAML,
         -                                        # each key/value pair is separated by a hyphen
           Key: Name
-          Value: CloudFormation Test - YAML      
+          Value: Test Instance      
         -
           Key: Environment
           Value: Development
